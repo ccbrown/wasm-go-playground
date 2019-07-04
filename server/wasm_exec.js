@@ -17,7 +17,6 @@
 	const decoder = new TextDecoder('utf-8');
 
     const filesystem = {
-        '/main.go': encoder.encode("package main\nfunc main() {}"),
         '/importcfg.link': encoder.encode(
             "packagefile command-line-arguments=main.a\n" +
             "packagefile runtime=prebuilt/runtime.a\n" +
@@ -28,6 +27,26 @@
             "packagefile runtime/internal/sys=prebuilt/runtime/internal/sys.a"
         ),
     };
+
+    let workingDirectory = '/';
+
+    let absPath = (path) => {
+        if (path[0] == '/') {
+            return path;
+        }
+        return workingDirectory + path.replace(/^\.\/?/, '');
+    };
+
+    global.readFromGoFilesystem = (path) => filesystem[absPath(path)];
+    global.writeToGoFilesystem = (path, content) => {
+        if (typeof content === 'string') {
+            filesystem[absPath(path)] = encoder.encode(content);
+        } else {
+            filesystem[absPath(path)] = content;
+        }
+    };
+    global.goStdout = (buf) => {};
+    global.goStderr = (buf) => {};
 
     const openFiles = new Map();
     let nextFd = 1000;
@@ -60,15 +79,6 @@
         });
     };
 
-    let workingDirectory = '/';
-
-    let absPath = (path) => {
-        if (path[0] == '/') {
-            return path;
-        }
-        return workingDirectory + path.replace(/^\.\/?/, '');
-    };
-
     const constants = {
         O_WRONLY: 1 << 0,
         O_RDWR: 1 << 1,
@@ -82,33 +92,30 @@
     global.fs = {
         constants,
         writeSync(fd, buf) {
-            if (fd <= 3) {
-                outputBuf += decoder.decode(buf);
-                const nl = outputBuf.lastIndexOf("\n");
-                if (nl != -1) {
-                    console.log(outputBuf.substr(0, nl));
-                    outputBuf = outputBuf.substr(nl + 1);
+            if (fd === 2) {
+                global.goStdout(buf);
+            } else if (fd === 3) {
+                global.goStderr(buf);
+            } else {
+                const file = openFiles[fd];
+                const source = filesystem[file.path];
+                let destLength = source.length + buf.length;
+                if (file.offset < source.length) {
+                    destLength = file.offset + buf.length;
+                    if (destLength < source.length) {
+                        destLength = source.length;
+                    }
                 }
-                return buf.length;
-            }
-            const file = openFiles[fd];
-            const source = filesystem[file.path];
-            let destLength = source.length + buf.length;
-            if (file.offset < source.length) {
-                destLength = file.offset + buf.length;
-                if (destLength < source.length) {
-                    destLength = source.length;
+                const dest = new Uint8Array(destLength);
+                for (let i = 0; i < source.length; ++i) {
+                    dest[i] = source[i];
                 }
+                for (let i = 0; i < buf.length; ++i) {
+                    dest[file.offset + i] = buf[i];
+                }
+                openFiles[fd].offset += buf.length;
+                filesystem[file.path] = dest;
             }
-            const dest = new Uint8Array(destLength);
-            for (let i = 0; i < source.length; ++i) {
-                dest[i] = source[i];
-            }
-            for (let i = 0; i < buf.length; ++i) {
-                dest[file.offset + i] = buf[i];
-            }
-            openFiles[fd].offset += buf.length;
-            filesystem[file.path] = dest;
         },
         write(fd, buf, offset, length, position, callback) {
             if (offset !== 0 || length !== buf.length) {
@@ -144,7 +151,6 @@
             callback(null, fd);
         },
         read(fd, buffer, offset, length, position, callback) {
-            console.log('read(' + fd + ', ' + length + ', ' + position + ')');
             if (offset !== 0) {
                 throw new Error('read not fully implemented: ' + offset);
             }
