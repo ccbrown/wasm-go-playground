@@ -1,7 +1,0 @@
-packagefile github.com/ccbrown/go-web-gc/helloworld=main.a
-packagefile runtime=prebuilt/runtime.a
-packagefile internal/bytealg=prebuilt/internal/bytealg.a
-packagefile internal/cpu=prebuilt/internal/cpu.a
-packagefile runtime/internal/atomic=prebuilt/runtime/internal/atomic.a
-packagefile runtime/internal/math=prebuilt/runtime/internal/math.a
-packagefile runtime/internal/sys=prebuilt/runtime/internal/sys.a
