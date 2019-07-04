@@ -117,11 +117,8 @@ input[type=button],
 	top: 1px;
 	border-radius: 5px;
 }
-#importsBox {
-	position: relative;
-	display: inline;
-	padding: 5px 0;
-	margin-right: 5px;
+input[type=button]:disabled {
+	background: #C0C0C0;
 }
 #importsBox input {
 	position: relative;

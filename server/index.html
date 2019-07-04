@@ -15,6 +15,12 @@
                 $('#code').linedtextarea();
                 $('#code').attr('wrap', 'off');
 
+                if (!WebAssembly || !WebAssembly.instantiateStreaming) {
+                    $('#run').val('Unsupported Browser');
+                    $('#run').attr('disabled', true);
+                    return;
+                }
+
                 Promise.all(
                     [
                         'prebuilt/runtime.a',
@@ -40,6 +46,8 @@
                         enableShortcuts: true,
                         transport: {
                             Run: (body, output) => {
+                                $('#run').attr('disabled', true);
+
                                 writeToGoFilesystem('/main.go', body);
                                 output({
                                     Kind: 'start',
@@ -57,20 +65,19 @@
                                     });
                                 };
                                 const go = new Go();
+                                const onExit = (code) => {
+                                    $('#run').attr('disabled', false);
+                                    output({
+                                        Kind: 'end',
+                                        Body: code ? 'status ' + code + '.' : undefined,
+                                    });
+                                };
                                 go.exit = (code) => {
                                     if (code) {
-                                        output({
-                                            Kind: 'end',
-                                            Body: 'status ' + code + '.',
-                                        });
+                                        onExit(code);
                                     } else {
                                         const go = new Go();
-                                        go.exit = (code) => {
-                                            output({
-                                                Kind: 'end',
-                                                Body: code ? 'status ' + code + '.' : undefined,
-                                            });
-                                        };
+                                        go.exit = onExit;
                                         WebAssembly.instantiate(readFromGoFilesystem('a.out'), go.importObject).then((result) => go.run(result.instance));
                                     }
                                 };
@@ -81,6 +88,9 @@
                             },
                         },
                     });
+
+                    $('#run').val('Run');
+                    $('#run').attr('disabled', false);
                 });
             });
 		</script>
@@ -89,7 +99,7 @@
 		<div id="banner">
 			<div id="head" itemprop="name">The WebAssembly Go Playground</div>
 			<div id="controls">
-				<input type="button" value="Run" id="run">
+				<input type="button" value="Loading..." id="run" disabled />
 			</div>
             <a style="float:right;padding:15px;font-family:sans-serif;" href="https://github.com/ccbrown/go-web-gc" target="_blank">github.com/ccbrown/go-web-gc</a>
 		</div>
