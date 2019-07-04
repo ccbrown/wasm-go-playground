@@ -9,6 +9,8 @@ You can try it out here: https://ccbrown.github.io/go-web-gc/server/
 * Safari works, but is unbearably slow. **Chrome or Firefox for desktop is highly recommended.**
 * Packages are not supported. Making them work would be straightforward, but I'm not compelled to spend time on it right now since this probably has no practical uses.
 
+## Code
+
 This repo very much has "proof of concept" / "make it work" organization. Here's a low effort explanation of what things are:
 
 * ./go – Almost everything in this directory was copied directly from the Go source. The only exceptions are go/cmd/link/link.go and go/cmd/compile/compile.go. These files basically turn the "link" and "compile" commands into libraries that can be used to link and compile an executable.
