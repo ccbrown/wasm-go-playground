@@ -4,7 +4,10 @@ This is the Go compiler ("gc") compiled for WASM, running in your browser! It ca
 
 You can try it out here: https://ccbrown.github.io/go-web-gc/server/
 
-Note: Packages are not supported. Making them work would be straightforward, but I'm not compelled to spend time on it right now since this probably has no practical uses.
+#### ⚠️ Important ⚠️
+
+* Safari works, but is unbearably slow. **Chrome or Firefox for desktop is highly recommended.**
+* Packages are not supported. Making them work would be straightforward, but I'm not compelled to spend time on it right now since this probably has no practical uses.
 
 This repo very much has "proof of concept" / "make it work" organization. Here's a low effort explanation of what things are:
 
