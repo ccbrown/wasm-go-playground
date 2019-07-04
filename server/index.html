@@ -15,11 +15,13 @@
                 $('#code').linedtextarea();
                 $('#code').attr('wrap', 'off');
 
-                if (!WebAssembly || !WebAssembly.instantiateStreaming) {
+                if (!WebAssembly || !WebAssembly.instantiate) {
                     $('#run').val('Unsupported Browser');
                     $('#run').attr('disabled', true);
                     return;
                 }
+
+                let buildWasm = null;
 
                 Promise.all(
                     [
@@ -34,7 +36,13 @@
                         .then((buf) => {
                             writeToGoFilesystem(path, new Uint8Array(buf));
                         })
-                    )
+                    ).concat([
+                        fetch('build.wasm')
+                            .then((response) => response.arrayBuffer())
+                            .then((buf) => {
+                                buildWasm = new Uint8Array(buf);
+                            })
+                    ])
                 ).then(() => {
                     const decoder = new TextDecoder('utf-8');
 
@@ -81,7 +89,7 @@
                                         WebAssembly.instantiate(readFromGoFilesystem('a.out'), go.importObject).then((result) => go.run(result.instance));
                                     }
                                 };
-                                WebAssembly.instantiateStreaming(fetch('build.wasm'), go.importObject).then((result) => go.run(result.instance));
+                                WebAssembly.instantiate(buildWasm, go.importObject).then((result) => go.run(result.instance));
                                 return {
                                     Kill: () => {},
                                 };
