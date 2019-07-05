@@ -1,17 +1,11 @@
 package main
 
 import (
-	"flag"
-	"os"
-
-	"github.com/ccbrown/go-web-gc/go/cmd/compile"
-	"github.com/ccbrown/go-web-gc/go/cmd/link"
+	"log"
+	"net/http"
 )
 
 func main() {
-	var LinkFlagSet = flag.CommandLine
-	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-	compile.Compile("main.go")
-	flag.CommandLine = LinkFlagSet
-	link.Link("main.a")
+	http.Handle("/", http.FileServer(http.Dir(".")))
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }

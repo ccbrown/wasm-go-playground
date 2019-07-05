@@ -1,4 +1,0 @@
-  src/cmd/compile/internal/ssa/testdata/i22558.go
-19:	func test(t *thing, u *thing) {
-20:		if t.next != nil {
-23:		fmt.Fprintf(os.Stderr, "%s\n", t.name)
