@@ -92,9 +92,9 @@
     global.fs = {
         constants,
         writeSync(fd, buf) {
-            if (fd === 2) {
+            if (fd === 1) {
                 global.goStdout(buf);
-            } else if (fd === 3) {
+            } else if (fd === 2) {
                 global.goStderr(buf);
             } else {
                 const file = openFiles[fd];
