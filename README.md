@@ -11,6 +11,6 @@ You can try it out here: https://ccbrown.github.io/go-web-gc
 
 ## Code
 
-* ./cmd – These are Go commands compiled for WASM. They were all produces by running commands such as `GOOS=js GOARCH=wasm go build -o ~/go/src/github.com/ccbrown/go-web-gc/compile.wasm .` from the Go source directories.
+* ./cmd – These are Go commands compiled for WASM. They were all produced by running commands such as `GOOS=js GOARCH=wasm go build .` from the Go source directories.
 * ./prebuilt – These are prebuilt runtime WASM files. These were produced by copying them from Go's cache after compiling anything for WASM.
-* . – This contains all the static files for an in-browser Go playground. Most of the files are either precompiled WASM or lightly modified copies of bits and pieces from [play.golang.org](https://play.golang.org/). The most substantial work here is in index.html and wasm_exec.js as wasm_exec.js needed a virtual filesystem implementation.
+* . – The top level directory contains all the static files for the in-browser Go playground. Most of the files are either precompiled WASM or lightly modified copies of bits and pieces from [play.golang.org](https://play.golang.org/). The most substantial work here is in index.html and wasm_exec.js as wasm_exec.js needed a virtual filesystem implementation.
