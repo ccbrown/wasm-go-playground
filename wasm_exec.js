@@ -16,17 +16,7 @@
 	const encoder = new TextEncoder('utf-8');
 	const decoder = new TextDecoder('utf-8');
 
-    const filesystem = {
-        '/importcfg.link': encoder.encode(
-            "packagefile command-line-arguments=main.a\n" +
-            "packagefile runtime=prebuilt/runtime.a\n" +
-            "packagefile internal/bytealg=prebuilt/internal/bytealg.a\n" +
-            "packagefile internal/cpu=prebuilt/internal/cpu.a\n" +
-            "packagefile runtime/internal/atomic=prebuilt/runtime/internal/atomic.a\n" +
-            "packagefile runtime/internal/math=prebuilt/runtime/internal/math.a\n" +
-            "packagefile runtime/internal/sys=prebuilt/runtime/internal/sys.a"
-        ),
-    };
+    const filesystem = {};
 
     let workingDirectory = '/';
 

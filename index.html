@@ -23,6 +23,13 @@
 
                 let cmds = {};
 
+                const exec = (wasm, args) => new Promise((resolve, reject) => {
+                    const go = new Go();
+                    go.exit = resolve;
+                    go.argv = go.argv.concat(args || []);
+                    WebAssembly.instantiate(wasm, go.importObject).then((result) => go.run(result.instance)).catch(reject);
+                });
+
                 Promise.all(
                     [
                         'prebuilt/runtime.a',
@@ -33,9 +40,7 @@
                         'prebuilt/runtime/internal/sys.a',
                     ].map((path) => fetch(path)
                         .then((response) => response.arrayBuffer())
-                        .then((buf) => {
-                            writeToGoFilesystem(path, new Uint8Array(buf));
-                        })
+                        .then((buf) => writeToGoFilesystem(path, new Uint8Array(buf)))
                     ).concat(
                         ['compile', 'link', 'gofmt']
                             .map((cmd) => fetch('cmd/' + cmd + '.wasm')
@@ -47,6 +52,21 @@
                     )
                 ).then(() => {
                     const decoder = new TextDecoder('utf-8');
+                    const encoder = new TextEncoder('utf-8');
+
+                    writeToGoFilesystem('/importcfg', encoder.encode(
+                        "packagefile runtime=prebuilt/runtime.a"
+                    ));
+
+                    writeToGoFilesystem('/importcfg.link', encoder.encode(
+                        "packagefile command-line-arguments=main.a\n" +
+                        "packagefile runtime=prebuilt/runtime.a\n" +
+                        "packagefile internal/bytealg=prebuilt/internal/bytealg.a\n" +
+                        "packagefile internal/cpu=prebuilt/internal/cpu.a\n" +
+                        "packagefile runtime/internal/atomic=prebuilt/runtime/internal/atomic.a\n" +
+                        "packagefile runtime/internal/math=prebuilt/runtime/internal/math.a\n" +
+                        "packagefile runtime/internal/sys=prebuilt/runtime/internal/sys.a"
+                    ));
 
                     playground({
                         codeEl: '#code',
@@ -74,34 +94,25 @@
                                         Body: decoder.decode(buf),
                                     });
                                 };
-                                const go = new Go();
-                                const onExit = (code) => {
-                                    $('#controls input').attr('disabled', false);
-                                    output({
-                                        Kind: 'end',
-                                        Body: code ? 'status ' + code + '.' : undefined,
-                                    });
-                                };
-                                go.exit = (code) => {
-                                    if (code) {
-                                        onExit(code);
-                                    } else {
-                                        const go = new Go();
-                                        go.exit = (code) => {
-                                            if (code) {
-                                                onExit(code);
-                                            } else {
-                                                const go = new Go();
-                                                go.exit = onExit;
-                                                WebAssembly.instantiate(readFromGoFilesystem('a.out'), go.importObject).then((result) => go.run(result.instance));
-                                            }
-                                        };
-                                        go.argv.push('-importcfg', 'importcfg.link', '-buildmode=exe', 'main.a');
-                                        WebAssembly.instantiate(cmds['link'], go.importObject).then((result) => go.run(result.instance));
-                                    }
-                                };
-                                go.argv.push('-p', 'main', '-complete', '-dwarf=false', '-pack', 'main.go');
-                                WebAssembly.instantiate(cmds['compile'], go.importObject).then((result) => go.run(result.instance));
+
+                                exec(cmds['compile'], ['-p', 'main', '-complete', '-dwarf=false', '-pack', '-importcfg', 'importcfg', 'main.go'])
+                                    .then((code) => code || exec(cmds['link'], ['-importcfg', 'importcfg.link', '-buildmode=exe', 'main.a']))
+                                    .then((code) => code || exec(readFromGoFilesystem('a.out')))
+                                    .then((code) => {
+                                        output({
+                                            Kind: 'end',
+                                            Body: code ? 'status ' + code + '.' : undefined,
+                                        });
+                                    })
+                                    .catch((err) => {
+                                        output({
+                                            Kind: 'end',
+                                            Body: 'wasm error: ' + (err.message || 'unknown'),
+                                        });
+                                    })
+                                    .finally(() => $('#controls input').attr('disabled', false))
+                                ;
+
                                 return {
                                     Kill: () => {},
                                 };
@@ -114,19 +125,18 @@
                     $('#fmt').show();
                     $('#fmt').click(() => {
                         $('#controls input').attr('disabled', true);
-                        const go = new Go();
-                        go.exit = (code) => {
-                            console.log(code);
-                            if (!code) {
-                                $('#code').val(decoder.decode(readFromGoFilesystem('main.go')));
-                            }
-                            $('#controls input').attr('disabled', false);
-                        };
+
                         writeToGoFilesystem('/main.go', $('#code').val());
-                        go.argv.push('-w', 'main.go');
                         goStderr = (buf) => console.log(decoder.decode(buf));
                         goStdout = goStderr;
-                        WebAssembly.instantiate(cmds['gofmt'], go.importObject).then((result) => go.run(result.instance));
+                        exec(cmds['gofmt'], ['-w', 'main.go'])
+                            .then((code) => {
+                                if (!code) {
+                                    $('#code').val(decoder.decode(readFromGoFilesystem('main.go')));
+                                }
+                            })
+                            .finally(() => $('#controls input').attr('disabled', false))
+                        ;
                     });
 
                     $('#controls input').attr('disabled', false);
