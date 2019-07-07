@@ -1,8 +1,8 @@
-# go-web-gc
+# wasm-go-playground
 
 This is the Go compiler ("gc") compiled for WASM, running in your browser! It can be used to run a simple playground, à la [play.golang.org](https://play.golang.org/) entirely in your browser!
 
-You can try it out here: https://ccbrown.github.io/go-web-gc
+You can try it out here: https://ccbrown.github.io/wasm-go-playground
 
 #### ⚠️ Important ⚠️
 
