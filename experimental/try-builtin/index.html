@@ -1,0 +1,181 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+        <title>The WebAssembly Go Playground</title>
+
+        <link rel="stylesheet" href="../../style.css">
+		<script src="wasm_exec.js"></script>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+        <script src="../../jquery-linedtextarea.js"></script>
+        <script src="../../playground.js"></script>
+
+		<script>
+            $(document).ready(function() {
+                $('#code').linedtextarea();
+                $('#code').attr('wrap', 'off');
+
+                if (!WebAssembly || !WebAssembly.instantiate) {
+                    $('#run').val('Unsupported Browser');
+                    $('#controls input').attr('disabled', true);
+                    return;
+                }
+
+                let cmds = {};
+
+                const exec = (wasm, args) => new Promise((resolve, reject) => {
+                    const go = new Go();
+                    go.exit = resolve;
+                    go.argv = go.argv.concat(args || []);
+                    WebAssembly.instantiate(wasm, go.importObject).then((result) => go.run(result.instance)).catch(reject);
+                });
+
+                Promise.all(
+                    [
+                        'prebuilt/runtime.a',
+                        'prebuilt/internal/bytealg.a',
+                        'prebuilt/internal/cpu.a',
+                        'prebuilt/runtime/internal/atomic.a',
+                        'prebuilt/runtime/internal/math.a',
+                        'prebuilt/runtime/internal/sys.a',
+                    ].map((path) => fetch(path)
+                        .then((response) => response.arrayBuffer())
+                        .then((buf) => writeToGoFilesystem(path, new Uint8Array(buf)))
+                    ).concat(
+                        ['cmd/compile', 'cmd/link', '../../cmd/gofmt']
+                            .map((cmd) => fetch(cmd + '.wasm')
+                                .then((response) => response.arrayBuffer())
+                                .then((buf) => {
+                                    cmds[cmd.replace(/.*\//, '')] = new Uint8Array(buf);
+                                })
+                            )
+                    )
+                ).then(() => {
+                    const decoder = new TextDecoder('utf-8');
+                    const encoder = new TextEncoder('utf-8');
+
+                    writeToGoFilesystem('/importcfg', encoder.encode(
+                        "packagefile runtime=prebuilt/runtime.a"
+                    ));
+
+                    writeToGoFilesystem('/importcfg.link', encoder.encode(
+                        "packagefile command-line-arguments=main.a\n" +
+                        "packagefile runtime=prebuilt/runtime.a\n" +
+                        "packagefile internal/bytealg=prebuilt/internal/bytealg.a\n" +
+                        "packagefile internal/cpu=prebuilt/internal/cpu.a\n" +
+                        "packagefile runtime/internal/atomic=prebuilt/runtime/internal/atomic.a\n" +
+                        "packagefile runtime/internal/math=prebuilt/runtime/internal/math.a\n" +
+                        "packagefile runtime/internal/sys=prebuilt/runtime/internal/sys.a"
+                    ));
+
+                    playground({
+                        codeEl: '#code',
+                        outputEl: '#output',
+                        runEl: '#run',
+                        enableHistory: false,
+                        enableShortcuts: true,
+                        transport: {
+                            Run: (body, output) => {
+                                $('#controls input').attr('disabled', true);
+
+                                writeToGoFilesystem('/main.go', body);
+                                output({
+                                    Kind: 'start',
+                                });
+                                goStderr = (buf) => {
+                                    output({
+                                        Kind: 'stderr',
+                                        Body: decoder.decode(buf),
+                                    });
+                                };
+                                goStdout = (buf) => {
+                                    output({
+                                        Kind: 'stdout',
+                                        Body: decoder.decode(buf),
+                                    });
+                                };
+
+                                exec(cmds['compile'], ['-p', 'main', '-complete', '-dwarf=false', '-pack', '-importcfg', 'importcfg', 'main.go'])
+                                    .then((code) => code || exec(cmds['link'], ['-importcfg', 'importcfg.link', '-buildmode=exe', 'main.a']))
+                                    .then((code) => code || exec(readFromGoFilesystem('a.out')))
+                                    .then((code) => {
+                                        output({
+                                            Kind: 'end',
+                                            Body: code ? 'status ' + code + '.' : undefined,
+                                        });
+                                    })
+                                    .catch((err) => {
+                                        output({
+                                            Kind: 'end',
+                                            Body: 'wasm error: ' + (err.message || 'unknown'),
+                                        });
+                                    })
+                                    .finally(() => $('#controls input').attr('disabled', false))
+                                ;
+
+                                return {
+                                    Kill: () => {},
+                                };
+                            },
+                        },
+                    });
+
+                    $('#run').val('Run');
+
+                    $('#fmt').show();
+                    $('#fmt').click(() => {
+                        $('#controls input').attr('disabled', true);
+
+                        writeToGoFilesystem('/main.go', $('#code').val());
+                        goStderr = (buf) => console.log(decoder.decode(buf));
+                        goStdout = goStderr;
+                        exec(cmds['gofmt'], ['-w', 'main.go'])
+                            .then((code) => {
+                                if (!code) {
+                                    $('#code').val(decoder.decode(readFromGoFilesystem('main.go')));
+                                }
+                            })
+                            .finally(() => $('#controls input').attr('disabled', false))
+                        ;
+                    });
+
+                    $('#controls input').attr('disabled', false);
+                });
+            });
+		</script>
+	</head>
+	<body itemscope itemtype="http://schema.org/CreativeWork">
+		<div id="banner">
+			<div id="head" itemprop="name">The WebAssembly Go Playground</div>
+			<div id="controls">
+				<input type="button" value="Loading..." id="run" disabled />
+                <input type="button" value="Format" id="fmt" style="display:none;" disabled>
+			</div>
+            <a style="float:right;padding:15px;font-family:sans-serif;" href="https://github.com/ccbrown/wasm-go-playground" target="_blank">github.com/ccbrown/wasm-go-playground</a>
+		</div>
+		<div id="wrap">
+			<textarea itemprop="description" id="code" name="code" autocorrect="off" autocomplete="off" autocapitalize="off" spellcheck="false">package main
+
+type Err string
+func (e Err) Error() string { return string(e) }
+
+func getSubject() (string, error) {
+	// try replacing nil with Err("getSubject error")
+	return "world", nil
+}
+
+func sayHello() error {
+	println("Hello, " + try(getSubject()) + "!")
+	return nil
+}
+
+func main() {
+	if err := sayHello(); err != nil {
+		panic(err)
+	}
+}
+</textarea>
+		</div>
+		<div id="output"></div>
+	</body>
+</html>
