@@ -42,11 +42,11 @@
                         .then((response) => response.arrayBuffer())
                         .then((buf) => writeToGoFilesystem(path, new Uint8Array(buf)))
                     ).concat(
-                        ['cmd/compile', 'cmd/link', '../../cmd/gofmt']
-                            .map((cmd) => fetch(cmd + '.wasm')
+                        ['compile', 'link', 'gofmt']
+                            .map((cmd) => fetch('cmd/' + cmd + '.wasm')
                                 .then((response) => response.arrayBuffer())
                                 .then((buf) => {
-                                    cmds[cmd.replace(/.*\//, '')] = new Uint8Array(buf);
+                                    cmds[cmd] = new Uint8Array(buf);
                                 })
                             )
                     )

@@ -190,6 +190,7 @@
     };
 
     global.process = {
+        pid: 1,
         cwd() {
             console.log('cwd()');
             return workingDirectory;
