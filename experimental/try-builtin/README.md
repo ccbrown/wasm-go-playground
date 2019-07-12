@@ -8,6 +8,6 @@ You can play with it here:
 
 https://ccbrown.github.io/wasm-go-playground/experimental/try-builtin/
 
-You can find the Go compiler changes that is uses here:
+You can find the Go compiler changes that it uses here:
 
 https://github.com/ccbrown/go/pull/1
