@@ -12,4 +12,10 @@ func Baz (type V) (x V) int {
     return Bar(V)(x)
 }
 
+func Recursive (type T) (x T) T {
+    Recursive(int)(1)
+    return x
+}
+
 var _ = Baz(1)
+var _ = Recursive(int)(1)

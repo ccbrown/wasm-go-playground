@@ -199,6 +199,7 @@ func preprocess(node ast.Node, info *types.Info, parentTypeParams map[string]typ
 				parentTypeParams[tpident.Name] = f.targs[i+j]
 			}
 		}
+		generatedDecls[name] = nil
 		decl = preprocess(decl, info, parentTypeParams).(*ast.FuncDecl)
 		generatedDecls[name] = decl
 	}
