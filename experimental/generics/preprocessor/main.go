@@ -201,6 +201,7 @@ func preprocess(node ast.Node, info *types.Info, parentTypeParams map[string]typ
 		}
 		generatedDecls[name] = nil
 		decl = preprocess(decl, info, parentTypeParams).(*ast.FuncDecl)
+		decl.TParams = nil
 		generatedDecls[name] = decl
 	}
 
@@ -248,6 +249,7 @@ func preprocess(node ast.Node, info *types.Info, parentTypeParams map[string]typ
 				}
 				return true
 			}, nil).(*ast.TypeSpec)
+			spec.TParams = nil
 			spec.Name = ast.NewIdent(name)
 			generatedDecls[name] = &ast.GenDecl{
 				Tok:   token.TYPE,

@@ -1,0 +1,42 @@
+package main
+
+// XXX: This is highly experimental. Don't expect correctness or stability.
+
+// Takes a slice of any type and reverses it.
+func Reverse (type T) (list []T) {
+	i := 0
+	j := len(list) - 1
+	for i < j {
+		list[i], list[j] = list[j], list[i]
+		i++
+		j--
+	}
+}
+
+// Requires T to be a string or byte slice.
+//
+// Note that at the moment, contracts are not actually type-checked.
+contract Sequence(T) {
+	T string, []byte
+}
+
+// Defines a tree where each node can hold a value that satisfies Sequence.
+type Tree (type T Sequence) struct {
+	Left *Tree
+	Right *Tree
+	Value T
+}
+
+func main() {
+	s := []string{"a", "b", "c"}
+	Reverse(s)
+	println(s[0], s[1], s[2])
+	
+	tree := Tree(string){
+		Value: "foo",
+		Left: &Tree(string){
+			Value: "bar",
+		},
+	}
+	println(tree.Left.Value)
+}
