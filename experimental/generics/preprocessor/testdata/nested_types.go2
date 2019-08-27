@@ -1,0 +1,14 @@
+package main
+
+type Foo(type T) struct {
+    bar Bar(T, T)
+}
+
+type Bar(type T, U) struct {
+    v U
+}
+
+func main() {
+	f := Foo(int){}
+	println(f.bar.v)
+}
