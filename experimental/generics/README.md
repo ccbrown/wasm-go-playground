@@ -4,9 +4,9 @@ This is an experimental playground for the generics draft design:
 
 https://go.googlesource.com/proposal/+/4a54a00950b56dd0096482d0edae46969d7432a6/design/go2draft-contracts.md
 
-It is based on the prototype type-checking here:
+It is based on the prototype source translation tool here:
 
-https://go-review.googlesource.com/c/go/+/187317/2
+https://go-review.googlesource.com/c/go/+/187317
 
 You can play with it here:
 
