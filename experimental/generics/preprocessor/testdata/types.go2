@@ -18,7 +18,7 @@ var _ List(byte) = []byte{}
 
 // A generic binary tree might be declared as follows.
 type Tree(type E) struct {
-	left, right *Tree
+	left, right *Tree(E)
 	payload E
 }
 
@@ -34,4 +34,3 @@ var root2 Tree(List(int))
 // to resolve the parsing ambiguity between the conversion []List(int) and the slice
 // type with a parameterized elements type [](List(int)).
 var _ List(List(int)) = [](List(int)){}
-var _ List(List(List(Tree(int)))) = [](List(List(Tree(int)))){}

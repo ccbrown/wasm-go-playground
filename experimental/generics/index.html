@@ -172,8 +172,8 @@ contract Sequence(T) {
 
 // Defines a tree where each node can hold a value that satisfies Sequence.
 type Tree (type T Sequence) struct {
-	Left *Tree
-	Right *Tree
+	Left *Tree(T)
+	Right *Tree(T)
 	Value T
 }
 
